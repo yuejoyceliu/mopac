@@ -15,8 +15,8 @@ nCORES = 28
 YAML = 'anneal.yaml'
 KEYWORDS = [
 #'mopac_keywords: "camp"\n',
-'md_region: "1-57,59-64"\n',
-'trajectory_selection: "1-65"\n'
+#'md_region: "1-57,59-64"\n',
+#'trajectory_selection: "1-65"\n'
 ]
 
 if 1/2==0:
