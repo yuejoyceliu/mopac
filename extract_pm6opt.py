@@ -19,12 +19,12 @@ def readpm6opt(fl):
     energy = lines[1].split()[1] #+','+lines[1].split()[2]
     xyz = lines[2:]
     if int(natom)!=len(xyz):
-        raise SystemExit(':::>_<:::Not Found %s Atoms in %s' %(natom,fl))
+        raise SystemExit('Error: Not Found %s Atoms in %s' %(natom,fl))
     else:
         return energy,xyz
 
 def writecom(nm,pos,xyz,chg,mp):
-    with open(pos+'/'+nm+'.com','w') as fo:
+    with open(pos+'/'+nm,'w') as fo:
         fo.writelines(STRT)
         fo.write('%chk='+nm+'.chk\n')
         fo.write(ROUTE)
@@ -39,14 +39,8 @@ def myformat(s):
     return '{0:<30}'.format(s)
 
 def writeE(pos,t_E):
-    with open(pos+'/pm6energy.txt','w') as fo:
-        for t in t_E:
-            tt = t.strip().split(',')
-            #fo.writelines(list(map(myformat,tt)))
-            fo.writelines("\t".join(tt))
-            fo.write('\n')                
     with open(pos+'/pm6energy.csv','w') as fo:
-        fo.write('struct,energy/(kcal/mol)\n')
+        fo.write('conformer,energy/(kcal/mol)\n')
         fo.writelines(t_E)
              
 def chgmp(folder):
@@ -68,7 +62,7 @@ def extract():
     alldirs.sort(key=lambda x: (len(x),x))
     newdir = 'optresult'
     if os.path.exists(newdir):
-        raise SystemExit('~T^T~ %s Exists! Remove it and try again!' % newdir)
+        raise SystemExit('Error: %s Exists! Remove it and try again!' % newdir)
     else:
         os.mkdir(newdir)
     chg,mp = chgmp(alldirs[0])
@@ -76,10 +70,10 @@ def extract():
     for dd in alldirs:
         try:
             optxyz = dd+'/'+TARGET
-            struct = dd[1:]
+            struct = dd[1:]+'.gjf'
             t_E,t_xyz = readpm6opt(optxyz)
             writecom(struct,newdir,t_xyz,chg,mp)
-            E.append(dd[1:]+','+t_E+'\n')
+            E.append(struct+','+t_E+'\n')
         except BaseException as err:
             length = 40+len(optxyz)
             print('WARNING'.center(length,'-'))
@@ -87,17 +81,12 @@ def extract():
             print('-'*length)
     if bool(E):
         writeE(newdir,E)
-        chdir(newdir)
         print('**\(^O^)/** %d %s Found! Check folder %s!' % (len(E),TARGET,newdir))
         print('Default Route, Charge and Multiplicity:\n %s %s %s' % (ROUTE,chg,mp))
     else:
         os.rmdir(newdir)
-        print('~T^T~Too Bad! Not find any pm6opt jobs (%s)!' % TARGET)
+        print('Error: Not find any pm6opt jobs (%s)!' % TARGET)
         
-def chdir(d):
-    with open(d+'/chdir.sh', "w") as fo:
-        fo.write("echo '#SBATCH --chdir='$(pwd) > temp;\ncp ~/yang/* .;\n sed -i '7d' submission_python.sh;\nsed -i '6rtemp' submission_python.sh;")
-    
 
 if __name__=='__main__':
     extract() 
