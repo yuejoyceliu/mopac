@@ -152,7 +152,7 @@ Besides xyz and yaml (test.yaml) files, sbatch file (test.sh) also needed:
 #SBATCH --account=???
 
 module load contrib/mopac16
-source /usr/lusers/yueliu96/.rvm/scripts/rvm
+source /usr/lusers/your-uw-netid/.rvm/scripts/rvm
 ldd /sw/contrib/cuby4/cuby4/classes/algebra/algebra_c.so > ldd.log
 cuby4 test.yaml &>LOG    
 ## results and error information will be written to file LOG
@@ -176,11 +176,11 @@ Most nodes on hyak.mox have 28 processors, however, the code in MOPAC only allow
 
 module load parallel-20170722
 module load contrib/mopac16
-source /usr/lusers/yueliu96/.rvm/scripts/rvm
+source /usr/lusers/your-uw-netid/.rvm/scripts/rvm
 ldd /sw/contrib/cuby4/cuby4/classes/algebra/algebra_c.so > ldd.log
 cat tasklists.sh | parallel -j 28
 ```
-where, tasklists$.$sh is :
+where, tasklists.sh is :
 
 ```bash
 cd absolute-directory-1; cuby4 test.yaml &>LOG
@@ -191,8 +191,10 @@ cd absolute-directory-2; cuby4 test.yaml &>LOG
 there should exist xyz and yaml files in every absolute directory.
 
 ## Scripts for Parallel-Run
-- [pm6opt_parallel.py](https://raw.githubusercontent.com/yueliu96/scripts_for_lab/master/pm6opt_parallel.py)
-- [pm6bomd_parallel.py](https://raw.githubusercontent.com/yueliu96/scripts_for_lab/master/pm6bomd_parallel.py)
+- pm6opt_parallel.py
+  - Usage: python pm6opt_parallel.py charge multiplicity
+- pm6bomd_parallel.py
+  - Usage: python pm6bomd_parallel.py charge multiplicity temperature
   
 To run pm6-optimize or pm6-BOMD for several different molecules, create their xyz files in the working directory:
 
@@ -200,7 +202,7 @@ To run pm6-optimize or pm6-BOMD for several different molecules, create their xy
 test1.xyz test2.xyz test3.xyz
 ```
 
-and then run `python pm6opt_parallel.py` or `python pm6bomd_parallel.py`. Then, tasklists$.$sh file, parallel_run$.$sh file and sub-directories for every xyz file will be created. In every xyz sub-folder, xyz and yaml files are created correspondingly:
+If the charge is 2, multiplicity is 1 and the temperature is 410, run `python pm6opt_parallel.py 2 1` or `python pm6bomd_parallel.py 2 1 410`. Then, tasklists$.$sh file, parallel_run.sh file and sub-directories for every xyz file will be created. In every xyz sub-folder, xyz and yaml files are created correspondingly:
 
 ```
 dtest1  dtest2 dtest3 taskslists.sh parallel_run.sh
@@ -214,7 +216,7 @@ in `dtest1`: `test1.xyz inp.yaml` if it is opt job; `test1.xyz anneal.yaml` if i
 
 Optimization job produces optimized.xyz and histotry_xxx.xyz (xxx depends on the name of yaml file). The optimized.xyz is the optimized geometry in xyz formatted, where energy value is on the second line.
 
-In the parallel-run case, one directory has several subdirectories containing finished optimized job (optimized.xyz), python script [extract_pm6opt.py](https://raw.githubusercontent.com/yueliu96/scripts_for_lab/master/extract_pm6opt.py) can be used to extract optimized geometry and energy.
+In the parallel-run case, one directory has several subdirectories containing finished optimized job (optimized.xyz), python script extract_pm6opt.py can be used to extract optimized geometry and energy.
 
 - *Usage*:
   - `python extract_pm6opt.py`
@@ -226,7 +228,7 @@ In the parallel-run case, one directory has several subdirectories containing fi
 
 ## dynamics output 
 
-Dynamics job creates additional file trajectory_*.xyz containing geometry information of all steps, which can be visualized by [VMD](https://www.ks.uiuc.edu/Research/vmd/) software. The user can extract specific snapshots from the trajcetroy according to the stepsize set by VMD. Or use the python script [traj2xyz.py](https://raw.githubusercontent.com/yueliu96/scripts_for_lab/master/traj2xyzs.py) to achieve the same goal as VMD extractor.
+Dynamics job creates additional file trajectory_*.xyz containing geometry information of all steps, which can be visualized by [VMD](https://www.ks.uiuc.edu/Research/vmd/) software. The user can extract specific snapshots from the trajcetroy according to the stepsize set by VMD. Or use the python script traj2xyz.py to achieve the same goal as VMD extractor.
 
 - *Usage*:
   - `python traj2xyz.py stride`
