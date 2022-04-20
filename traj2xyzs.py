@@ -9,6 +9,7 @@ If N=100 and it has 20,000 cycles in the trajectory_anneal.xyz, you will get 20,
 '''
 
 import sys,os,glob
+TARGET = 'trajectory_anneal.xyz'
  
 def checkcommand():
     if len(sys.argv)==2:
@@ -20,27 +21,23 @@ def checkcommand():
         raise SystemExit(' python traj2xyz.py N\nN=10: 20 snapshots out of 200 are extracted from trajectory.')
 
 def readtraj(d,stride):
-    try:
-        fl = glob.glob(d+'/trajectory_*.xyz')[0]
-    except IndexError:
-        print(':::Warning::: %s/trajectory_*.xyz Not Found!' % d)
-        return
+    fl = d+'/'+TARGET
     with open(fl,'r') as fo:
         lines = fo.readlines()
     natom = int(lines[0].strip())
     ncycle = len(lines)//(natom+2)
     n = ncycle//stride
-    newd = d+'_snapshots'
+    name = os.path.basename(d)
+    newd = name+'_snapshots'
     os.mkdir(newd)
+    name = name[1:] if name[0]=='d' else name
     for i in range(n):
         snap = lines[i*stride*(natom+2):(i*stride+1)*(natom+2)]
-        convert2xyz(snap,newd+'/'+d[1:],i)
+        flname = newd + '/' + name + '_snap' + str(i+1) + '.xyz'
+        convert2xyz(snap,flname)
     print(' ^_^ %s cycles in %s -->  %s *snap*xyz files in %s folder!' % (ncycle,fl,n,newd))
-    #except BaseException as err:
-    #    print(err)
 
-def convert2xyz(lss,f,j):
-    flname = f+'_snap'+str(j+1)+'.xyz'
+def convert2xyz(lss,flname):
     lxyz = [lss[0].strip()+'\n','\n']
     for ss in lss[2:]:
         ssp = ss.split()
@@ -51,8 +48,12 @@ def convert2xyz(lss,f,j):
 
 def traj2xyz(n):
     allfd = os.listdir('.')
-    alldirs = [x for x in allfd if os.path.isdir(x) and x.startswith('d')]
+    alldirs = [x for x in allfd if os.path.isdir(x) and os.path.exists(x+'/'+TARGET)]
     alldirs.sort(key=lambda x: (len(x),x))
+    if TARGET in allfd:
+        alldirs.append(os.getcwd())
+    if len(alldirs)==0:
+        raise SystemExit('Error: Not found %s in the current or direct sub- directory' % TARGET)
     for everydir in alldirs:
         readtraj(everydir,n)
     print('**\(^O^)/** Please check all snap files in the above folders!')

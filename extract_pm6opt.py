@@ -1,14 +1,9 @@
 #!/usr/bin/env python
-
-#AUTHOR: Yue Liu
-#ENAIL: yueliu96@uw.edu
-#CREATED: 12/01/2018
 # Usage: python extract_pm6opt.py
 
 import os,sys,glob
 
 STRT = ['%mem=100gb\n','%nprocshared=28\n']
-#ROUTE = '# opt wb97xd/6-31+g(d,p) pop=min scf=(xqc,tight)\n'
 ROUTE = '# opt freq b3lyp/6-31+g(d,p) pop=none scf=(xqc,tight)\n'
 TARGET='optimized.xyz'
 
@@ -58,7 +53,9 @@ def chgmp(folder):
 
 def extract():
     allfd = os.listdir('.')
-    alldirs = [x for x in allfd if os.path.isdir(x) and x.startswith('d')]
+    alldirs = [x for x in allfd if os.path.isdir(x) and os.path.exists(x+'/'+TARGET)]
+    if len(alldirs)==0:
+        raise SystemExit('Error: Not found any direct subdirectories with %s!' % TARGET)
     alldirs.sort(key=lambda x: (len(x),x))
     newdir = 'optresult'
     if os.path.exists(newdir):

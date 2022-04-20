@@ -11,9 +11,10 @@ import glob,os,sys
 
 nCORES = 28
 YAML = 'inp.yaml'
-KEYWORDS = ''
-#KEYWORDS = 'optimize_region: "1-59,61-64"\n'
-#KEYWORDS = 'mopac_keywords: "camp"\n'
+KEYWORDS = [
+#'mopac_keywords: "camp"'
+#'optimize_region: "1-59,61-64"',
+]
 
 def checkcommand():
     n = len(glob.glob('*.xyz'))
@@ -37,7 +38,8 @@ def yaml(fl,outfl,chg,mp):
         fo.write('charge: '+str(chg)+'\n')                                          
         fo.write('multiplicity: '+str(mp)+'\n')    
         fo.writelines(p2)
-        if KEYWORDS: fo.write(KEYWORDS)
+        for line in KEYWORDS:
+            fo.write(line + '\n')
 
 def tasklists_sh(alldirs,mydir):
     lines = []
@@ -83,7 +85,7 @@ def opt(charge,mtplct):
     who = os.getlogin()
     tasklists_sh(xyzdirs,pwd)
     parallelrun_sh(nxyz,who,pwd)
-    if KEYWORDS: print("ADD:", KEYWORDS)
+    if KEYWORDS: print("ADD:", ",".join(KEYWORDS))
     print('**\(^O^)/**%s tasks found! check and run:\n sbatch parallel_run.sh' % nxyz) 
 
 if __name__=='__main__':
