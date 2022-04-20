@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 
 '''
- AUTHOR: Yue Liu
- EMAIL: yueliu96@uw.edu
- Created: 12/01/2018
- Edited: 04/08/2019
-Usage: python pm6opt_parallel.py or python pm6opt_parallel.py charge multiplicity
+Usage: python pm6opt_parallel.py charge multiplicity
 find all xyz files in the working directory and make directories and inp.yaml for every one.
 generate tasklists.sh file and parallel_run.sh file
 after finishing, run 'sbatch parallel_run.sh'
-after finishing, still in this directory, run 'python extract_pm6opt.py'
 '''
 
 import glob,os,sys
-from subprocess import Popen,PIPE
 
 nCORES = 28
 YAML = 'inp.yaml'
@@ -21,52 +15,23 @@ KEYWORDS = ''
 #KEYWORDS = 'optimize_region: "1-59,61-64"\n'
 #KEYWORDS = 'mopac_keywords: "camp"\n'
 
-if 1/2==0:
-    myinput = raw_input
-else:
-    myinput = input 
-
 def checkcommand():
     n = len(glob.glob('*.xyz'))
     if n == 0:
         raise SystemExit(':::>_<:::No xyz Files Found!')
-    if len(sys.argv) == 1:
-        return issamecondition(n)
-    elif len(sys.argv) == 3:
+    if len(sys.argv) == 3:
         return int(sys.argv[1]),int(sys.argv[2])
     else:
-        raise SystemExit('Usage: python pm6opt_parallel.py\nOR     python pm6opt_parallel.py charge multiplicty')
+        raise SystemExit('Usage: python pm6opt_parallel.py charge multiplicty')
 
 def mypathexist(dirs):
     for d in dirs:
         if os.path.exists(d):
             raise SystemExit(':::>_<:::%s Exists! Remove it and try again!' % d)
 
-def issamecondition(n):
-    x1,x2 = 'x1','x2'
-    print('%d xyz files found in the current directory'  % n)
-    print('-'*60+'\nPlease Specify their charge,multiplicity\n'+'-'*60)
-    try:
-        c1 = myinput('? Do they have the same charge [y/Y--yes],[other--no]: ')
-        if c1.lower()=='y':
-            x1 = int(myinput('? charge: '))
-        c2 = myinput('? Do they have the same multiplicity [y/Y--yes],[other--no]: ')
-        if c2.lower()=='y':
-            x2 = int(myinput('? multiplicity: '))
-        return x1,x2
-    except:
-        raise SystemExit(':::>_<:::Invalid Input!')
-
 def yaml(fl,outfl,chg,mp):
     p1 = ['job: optimize\n','geometry: '+fl+'\n']
     p2 = ['interface: mopac\n','method: pm6\n','spin_restricted: auto_uhf\n','maxcycles: 2000\n','print: timing\n','mopac_precise: yes\n','mopac_peptide_bond_fix: yes\n','modifiers: dispersion3, h_bonds4\n','modifier_h_bonds:\n','  h_bonds4_scale_charged: no\n','  h_bonds4_extra_scaling: {}\n']
-    try:
-        if isinstance(chg,str):
-            chg = int(myinput(('? charge of %s: ') % fl))
-        if isinstance(mp,str):
-            mp = int(myinput(('? multiplicity of %s: ') % fl))
-    except:
-        raise SystemExit(':::>_<:::Invalid Input!')
     with open(outfl,'w') as fo:
         fo.writelines(p1)
         fo.write('charge: '+str(chg)+'\n')                                          
@@ -114,8 +79,8 @@ def opt(charge,mtplct):
         yamlname = dxyz+'/'+YAML
         yaml(fxyz,yamlname,charge,mtplct)
         os.rename(fxyz,dxyz+'/'+fxyz)
-    pwd = Popen('pwd',stdout=PIPE,shell=True).stdout.read().strip().decode()
-    who = Popen('whoami',stdout=PIPE,shell=True).stdout.read().strip().decode()
+    pwd = os.getcwd()
+    who = os.getlogin()
     tasklists_sh(xyzdirs,pwd)
     parallelrun_sh(nxyz,who,pwd)
     if KEYWORDS: print("ADD:", KEYWORDS)
