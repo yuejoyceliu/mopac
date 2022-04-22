@@ -21,15 +21,18 @@ def checkcommand():
         raise SystemExit(' python traj2xyz.py N\nN=10: 20 snapshots out of 200 are extracted from trajectory.')
 
 def readtraj(d,stride):
+    name = os.path.basename(d)
+    newd = name+'_snapshots'
+    if os.path.exists(newd):
+        print("Warning: %s Exists. Remove and try it again!" % newd)
+        return
+    os.mkdir(newd)
     fl = d+'/'+TARGET
     with open(fl,'r') as fo:
         lines = fo.readlines()
     natom = int(lines[0].strip())
     ncycle = len(lines)//(natom+2)
     n = ncycle//stride
-    name = os.path.basename(d)
-    newd = name+'_snapshots'
-    os.mkdir(newd)
     name = name[1:] if name[0]=='d' else name
     for i in range(n):
         snap = lines[i*stride*(natom+2):(i*stride+1)*(natom+2)]
