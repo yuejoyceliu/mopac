@@ -32,9 +32,17 @@ def checkcommand():
         raise SystemExit('Usage: python pm6bomd_parallel.py charge(int) multiplicity(int) temperature(float)')
 
 def mypathexist(dirs):
-    for d in dirs:
+    if len(dirs)==0:
+        raise SystemExit('Error: Not found any xyz files!')
+    dir_idx = []
+    for i, d in enumerate(dirs):
         if os.path.exists(d):
-            raise SystemExit(':::>_<:::%s Exists! Remove it and try again!' % d)
+            print('Warning: %s Exists! Remove it and try again!' % d)
+        else:
+            dir_idx.append(i)
+    if len(dir_idx)==0:
+        raise SystemExit('Error: All directories are existed!')
+    return dir_idx
 
 def yaml(fl,outfl,chg,mp,t):
     p1 = ['job: dynamics\n','geometry: '+fl+'\n']
@@ -85,8 +93,11 @@ def parallelrun_sh(n,user,mydir):
 def dynamics(charge,mtplct,temp):
     xyzfiles = glob.glob('*.xyz')
     xyzdirs = ['d'+d[:-4] for d in xyzfiles]
-    mypathexist(xyzdirs)
+    valid_idx = mypathexist(xyzdirs)
+    xyzfiles = [xyzfiles[i] for i in valid_idx]
+    xyzdirs = [xyzdirs[i] for i in valid_idx]
     nxyz = len(xyzfiles)
+    print("Reminder: %d tasks are found:" % nxyz)
     for i in range(nxyz):
         fxyz = xyzfiles[i]
         dxyz = xyzdirs[i]
@@ -94,11 +105,12 @@ def dynamics(charge,mtplct,temp):
         yamlname = dxyz+'/'+YAML
         yaml(fxyz,yamlname,charge,mtplct,temp)
         os.rename(fxyz,dxyz+'/'+fxyz)
+        print(' ', fxyz, '@', temp, 'K')
     pwd = os.getcwd() 
     who = os.getlogin()
     tasklists_sh(xyzdirs,pwd)
     parallelrun_sh(nxyz,who,pwd)
-    print('**\(^O^)/**You are ready to run mopac dynamics! Check and Run:\n sbatch parallel_run.sh')
+    print('**\(^O^)/** Check and run: sbatch parallel_run.sh')
     if KEYWORDS: print("Additional keywords are added:\n", " ".join(KEYWORDS))
 
 if __name__=='__main__':
