@@ -194,7 +194,7 @@ there should exist xyz and yaml files in every absolute directory.
 - pm6opt_parallel.py
   - Usage: python pm6opt_parallel.py charge multiplicity
 - pm6bomd_parallel.py
-  - Usage: python pm6bomd_parallel.py charge multiplicity temperature
+  - Usage: python pm6bomd_parallel.py charge multiplicity temperature1 temperature2 temperature3 ...
   
 To run pm6-optimize or pm6-BOMD for several different molecules, create their xyz files in the working directory:
 
