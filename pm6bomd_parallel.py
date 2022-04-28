@@ -7,7 +7,7 @@
  Edited: 04/13/2022
  Usage:   python pm6bomd_parallel.py charge multiplicity  T (chg & mp are intergers; T is float)
 '''
-import glob,os,sys
+import glob,os,sys,shutil
 
 nCORES = 28
 YAML = 'anneal.yaml'
@@ -22,27 +22,21 @@ def checkcommand():
     n = len(glob.glob('*.xyz'))
     if n == 0:
         raise SystemExit(':::>_<:::No xyz Files Found!')
-    if len(sys.argv)==4:
+    if len(sys.argv)>=4:
         try:
-            return int(sys.argv[1]),int(sys.argv[2]),float(sys.argv[3])
+            return int(sys.argv[1]),int(sys.argv[2]),[float(sys.argv[i]) for i in range(3, len(sys.argv))]
         except BaseException as err:
             print(':::>_<::: charge and multiplicity must be integers and temperature is float!')
             raise SystemExit(err)
     else:
-        raise SystemExit('Usage: python pm6bomd_parallel.py charge(int) multiplicity(int) temperature(float)')
+        raise SystemExit('Usage: python pm6bomd_parallel.py charge(int) multiplicity(int) T1(float) T2 T3 ...')
 
 def mypathexist(dirs):
     if len(dirs)==0:
         raise SystemExit('Error: Not found any xyz files!')
-    dir_idx = []
-    for i, d in enumerate(dirs):
+    for d in dirs:
         if os.path.exists(d):
-            print('Warning: %s Exists! Remove it and try again!' % d)
-        else:
-            dir_idx.append(i)
-    if len(dir_idx)==0:
-        raise SystemExit('Error: All directories are existed!')
-    return dir_idx
+            raise SystemExit('Error: %s Exists! Remove it and try again!' % d)
 
 def yaml(fl,outfl,chg,mp,t):
     p1 = ['job: dynamics\n','geometry: '+fl+'\n']
@@ -90,32 +84,35 @@ def parallelrun_sh(n,user,mydir):
         fo.write(p7)
         fo.write('end=$(date +%s)\nlet "etime=($end-$begin)/60"\necho \'Elapsed Time: \'$etime\' min\'')
 
-def dynamics(charge,mtplct,temp):
-    xyzfiles = glob.glob('*.xyz')
+def dynamics(xyzfiles,charge,mtplct,temp):
     xyzdirs = ['d'+d[:-4] for d in xyzfiles]
-    valid_idx = mypathexist(xyzdirs)
-    xyzfiles = [xyzfiles[i] for i in valid_idx]
-    xyzdirs = [xyzdirs[i] for i in valid_idx]
-    nxyz = len(xyzfiles)
-    print("Reminder: %d tasks are found:" % nxyz)
-    for i in range(nxyz):
-        fxyz = xyzfiles[i]
-        dxyz = xyzdirs[i]
+    mypathexist(xyzdirs)
+    for fxyz, dxyz in zip(xyzfiles, xyzdirs):
         os.mkdir(dxyz)
         yamlname = dxyz+'/'+YAML
         yaml(fxyz,yamlname,charge,mtplct,temp)
         os.rename(fxyz,dxyz+'/'+fxyz)
-        print(' ', fxyz, '@', temp, 'K')
+    return xyzdirs
+
+
+def main():
+    chg,mp,temperatures = checkcommand()
+    xyzfiles = glob.glob('*.xyz')
+    xyzdirs = []
+    if len(temperatures) == 1:
+        xyzdirs = dynamics(xyzfiles,chg,mp,temperatures[0])
+    else:
+        for t in temperatures:
+            for f in xyzfiles:
+                shutil.copyfile(f, f[:-4]+'_'+str(int(t))+'.xyz')
+            xyzfiles_t = [f[:-4]+'_'+str(int(t))+'.xyz']
+            xyzdirs.extend(dynamics(xyzfiles_t, chg, mp, t))     
     pwd = os.getcwd() 
     who = os.getlogin()
     tasklists_sh(xyzdirs,pwd)
-    parallelrun_sh(nxyz,who,pwd)
-    print('**\(^O^)/** Check and run: sbatch parallel_run.sh')
+    parallelrun_sh(len(xyzdirs),who,pwd)
+    print('**\(^O^)/** Found %d tasks. Check and run: sbatch parallel_run.sh' % len(xyzdirs))
     if KEYWORDS: print("Additional keywords are added:\n", " ".join(KEYWORDS))
-
+                        
 if __name__=='__main__':
-    chg,mp,t = checkcommand()
-    dynamics(chg,mp,t)
-                
-
-        
+    main()
