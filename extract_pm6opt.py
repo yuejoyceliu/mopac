@@ -18,8 +18,9 @@ def readpm6opt(fl):
     else:
         return energy,xyz
 
-def writecom(nm,pos,xyz,chg,mp):
-    with open(pos+'/'+nm,'w') as fo:
+def writegjf(fl,pos,xyz,chg,mp):
+    with open(pos+'/'+fl,'w') as fo:
+        nm = fl[:-4]
         fo.writelines(STRT)
         fo.write('%chk='+nm+'.chk\n')
         fo.write(ROUTE)
@@ -69,7 +70,7 @@ def extract():
             optxyz = dd+'/'+TARGET
             struct = dd[1:]+'.gjf'
             t_E,t_xyz = readpm6opt(optxyz)
-            writecom(struct,newdir,t_xyz,chg,mp)
+            writegjf(struct,newdir,t_xyz,chg,mp)
             E.append(struct+','+t_E+'\n')
         except BaseException as err:
             length = 40+len(optxyz)
